@@ -1,0 +1,56 @@
+Potential Future Connectors:
+heroku
+sendgrid
+Trello
+
+Analytics:
+Hosted Graphite
+New Relic
+Open Web Analytics
+Google Analytics
+Piwik.org
+WebFOCUS
+-- IBM Tealeaf?
+
+Media:
+PandaStream
+DocRaptor
+Facebook
+Google Plus
+Yahoo!
+LinkedIn
+-- wiki?
+-- Blogger?
+
+Payment:
+Spreedly
+
+Integration:
+Talend
+iWay
+wso2
+
+Authentication & Authorization:
+wso2
+LDAP
+AD
+
+Business:
+Salesforce
+SAP
+
+Messaging:
+Twilio
+
+General:
+Properties
+File (URI?)
+
+Current API's:
+Twitter
+YouTube
+RDBMS
+KeenIO
+Folder
+List
+URI/Proxy
