@@ -1,1 +1,1 @@
-[![Build Status](https://travis-ci.org/Hevelian/hevelian-exonite.svg?branch=master)](https://travis-ci.org/Hevelian/hevelian-exonite)
+[![Build Status](https://travis-ci.org/Hevelian/hevelian-exonite.svg?branch=master)](https://travis-ci.org/Hevelian/hevelian-exonite) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4afb4ab449a94dba8224157d16e873dc)](https://www.codacy.com/app/colin_3/hevelian-exonite?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Hevelian/hevelian-exonite&amp;utm_campaign=Badge_Grade)
