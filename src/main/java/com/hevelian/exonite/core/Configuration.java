@@ -17,7 +17,7 @@ public class Configuration {
 	HashMap<String,String> config 				= new HashMap<String,String>();
 	String homePath								= null;
 
-	private final String CONTEXT_NAME			= "hevelian";
+	private final String CONTEXT_NAME			= "hevelian.exonite.home";
 	private final String FOLDER_AUTHENTICATORS	= "authenticators/";
 	private final String FOLDER_COLLECTIONS		= "collections/";
 	private final String FOLDER_CONNECTORS		= "connectors/";
@@ -38,7 +38,7 @@ public class Configuration {
 			}
 			
 			if(homePath==null) {
-				System.out.println("EXONITE: ERROR: context 'hevelian' not found in JNDI.");
+				System.out.println("EXONITE: ERROR: context 'hevelian.exonite.home' not found in JNDI.");
 				return;
 			}
 			

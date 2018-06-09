@@ -5,6 +5,17 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>war</packaging>
   
+	<organization>
+		<name>Hevelian</name>
+	</organization>
+	<inceptionYear>2012</inceptionYear>
+
+	<properties>
+		<spring.version>4.2.6.RELEASE</spring.version>
+		<spring-security.version>4.1.0.RELEASE</spring-security.version>
+		<spring.data.version>1.9.4.RELEASE</spring.data.version>
+	</properties>
+
   	<build>
 		<sourceDirectory>src</sourceDirectory>
   		<plugins>
@@ -52,6 +63,23 @@
 		  <version>1.10</version>
 		</dependency>
 		
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-web</artifactId>
+			<version>${spring-security.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-config</artifactId>
+			<version>${spring-security.version}</version>
+		</dependency>
+
 		<!-- app or connector specific stuff -->
 		<dependency>
 		   <groupId>org.im4java</groupId>
