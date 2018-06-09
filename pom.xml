@@ -22,15 +22,8 @@
 				<version>2.2</version>
 				<artifactId>maven-war-plugin</artifactId>
 				<configuration>
-					<webXml>WebContent/WEB-INF/web.xml</webXml>
-					<source>1.7</source>
-					<target>1.7</target>
-					<webResources>
-			            <resource>
-			              <directory>WebContent</directory>
-			              <include>*.jsp</include>
-			            </resource>
-					</webResources>
+					<source>1.8</source>
+					<target>1.8</target>
   				</configuration>
 			</plugin>
 		</plugins>
