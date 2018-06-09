@@ -15,3 +15,7 @@ exonite-hevelian/.settings/org.eclipse.wst.jsdt.ui.superType.container
 
 exonite-hevelian/.settings/org.eclipse.wst.jsdt.ui.superType.name
 /target/
+/.settings/
+/.classpath
+/.DS_Store
+/.project
