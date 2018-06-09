@@ -2,19 +2,14 @@ package com.hevelian.exonite.image;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.zip.CRC32;
 
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.Info;
-
-import com.hevelian.exonite.core.Configuration;
 
 public class Formatter {
 
