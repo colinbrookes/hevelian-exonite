@@ -78,10 +78,10 @@ public class Cache implements ConnectorImpl {
 			String indexPath = config.getProperty("folder_home") + "data/" + cacheIndexes + "/" + use_index + "/keys/";
 			File indexFile = new File(indexPath);
 			if(is_key!=null) {
-				System.out.println("READ CACHE, IS_KEY IS NOT NULL");
 				/* if key was provided then we read the single index file */
 				String filename = createSafeString(is_key);
 				readAllRecords(new File(indexPath + filename));
+				
 			} else {
 				/* otherwise we read all index files */
 				File[] indexes = indexFile.listFiles();
@@ -102,8 +102,6 @@ public class Cache implements ConnectorImpl {
 				readCountersFile(indexFile);
 			}
 		}
-		
-		System.out.println("Cache: total record count: " + items.size());
 		
 		return items;
 	}
