@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.zip.CRC32;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilder;
@@ -35,6 +36,7 @@ public class Cache implements ConnectorImpl {
 	
 	// the collection properties
 	private String use_index				= null;
+	private String is_key					= null;
 	private String full_text_index			= null;
 	private String full_text_counters		= null;
 	
@@ -72,13 +74,22 @@ public class Cache implements ConnectorImpl {
 		
 		// regular index on a data set
 		if(use_index!=null) {
+			
 			String indexPath = config.getProperty("folder_home") + "data/" + cacheIndexes + "/" + use_index + "/keys/";
 			File indexFile = new File(indexPath);
-			File[] indexes = indexFile.listFiles();
+			if(is_key!=null) {
+				System.out.println("READ CACHE, IS_KEY IS NOT NULL");
+				/* if key was provided then we read the single index file */
+				String filename = createSafeString(is_key);
+				readAllRecords(new File(indexPath + filename));
+			} else {
+				/* otherwise we read all index files */
+				File[] indexes = indexFile.listFiles();
 
-			for(int i=0; i<indexes.length; i++) {
-				// we read the indexes file, and create a CollectionItem for each record
-				readAllRecords(indexes[i]);
+				for(int i=0; i<indexes.length; i++) {
+					// we read the indexes file, and create a CollectionItem for each record
+					readAllRecords(indexes[i]);
+				}
 			}
 		}
 		
@@ -91,6 +102,8 @@ public class Cache implements ConnectorImpl {
 				readCountersFile(indexFile);
 			}
 		}
+		
+		System.out.println("Cache: total record count: " + items.size());
 		
 		return items;
 	}
@@ -126,6 +139,17 @@ public class Cache implements ConnectorImpl {
 		}
 	}
 	
+	private String createSafeString(String from) {
+		CRC32 crc = new CRC32();
+		try {
+			crc.update(from.getBytes("UTF-8"));
+			return Long.toHexString(crc.getValue());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return from;
+		}
+	}
+
 	/**
 	 * this fetches all the records for a regular index file
 	 * @param index
@@ -179,6 +203,10 @@ public class Cache implements ConnectorImpl {
 					use_index = evaluator.evaluate(n.getTextContent());
 				}
 				
+				if(n.getNodeName().equalsIgnoreCase("is_key")) {
+					is_key = evaluator.evaluate(n.getTextContent());
+				}
+
 				if(n.getNodeName().equalsIgnoreCase("full_text_index")) {
 					full_text_index = evaluator.evaluate(n.getTextContent());
 				}

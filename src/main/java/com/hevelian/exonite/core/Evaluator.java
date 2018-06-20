@@ -17,6 +17,7 @@ public class Evaluator {
 	HttpServletRequest request 			= null;
 	Session session 					= null;
 	HashMap<String, Action> objects 	= null;
+	Connector connector					= null;
 	
 	ScriptEngineManager factory 		= new ScriptEngineManager();
 	ScriptEngine engine 				= factory.getEngineByName("JavaScript");
@@ -33,6 +34,12 @@ public class Evaluator {
 	public Evaluator(HttpServletRequest request, HashMap<String, Action> objects) {
 		this.request = request;
 		this.objects = objects;
+	}
+
+	public Evaluator(HttpServletRequest request, HashMap<String, Action> objects, Connector connector) {
+		this.request = request;
+		this.objects = objects;
+		this.connector = connector;
 	}
 
 	public Evaluator(HashMap<String, Action> objects) {
@@ -90,6 +97,11 @@ public class Evaluator {
 						match = true;
 					}
 					
+					if(parts[0].equalsIgnoreCase("connector") && connector!=null) {
+						evaluated = evaluated.concat(connector.getProperty(parts[1]));
+						match = true;
+					}
+
 					if(parts[0].equalsIgnoreCase("request") && request!=null) {
 						evaluated = evaluated.concat((String) request.getSession(true).getAttribute(parts[1]));
 						match = true;

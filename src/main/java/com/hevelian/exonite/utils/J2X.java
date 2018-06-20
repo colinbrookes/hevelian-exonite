@@ -123,7 +123,7 @@ public class J2X {
 				}
 				
 				if(State==STATE_IN_NAME) {
-					node = doc.createElement(Name);
+					node = doc.createElement(Name.replace(' ', '_'));
 					root.appendChild(node);
 					State = STATE_UNKNOWN;
 					break;

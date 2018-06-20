@@ -100,7 +100,7 @@ public class Collection {
 		 }
 		 
 		 if(limiter!=null) {
-			 items = limiter.run(items);
+			 items = limiter.run(items, filter);
 		 }
 		 
 		 StringBuilder xml = new StringBuilder();
@@ -120,7 +120,7 @@ public class Collection {
 			 while(it.hasNext()) {
 				 CollectionItem item = it.next();
 				 
-				 if(filter!=null && !filter.matches(item)) continue;
+				 if(limiter!=null || (filter!=null && !filter.matches(item))) continue;
 				 
 				 xml.append("	<record>\n");
 

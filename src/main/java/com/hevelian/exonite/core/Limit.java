@@ -55,4 +55,30 @@ public class Limit {
 		return subsetItems;
 	}
 
+	public ArrayList<CollectionItem> run(ArrayList<CollectionItem> items, SelectFilter filter) {
+		
+		ArrayList<CollectionItem> subsetItems = new ArrayList<CollectionItem>();
+		int start = Integer.parseInt(offset);
+		int end = start + Integer.parseInt(fetch);
+		int cnt = end - start;
+		int matched = 0;
+		
+		// if(filter!=null && !filter.matches(item)) continue;
+		
+		for(int i=0; i<items.size(); i++) {
+			if(filter!=null && !filter.matches(items.get(i))) continue;
+			
+			matched++;
+			
+			if(matched>=start) {
+				subsetItems.add(items.get(i));
+			}
+			
+			if(subsetItems.size()>=cnt) {
+				return subsetItems;
+			}
+		}
+		
+		return subsetItems;
+	}
 }
