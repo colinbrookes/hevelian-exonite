@@ -1,10 +1,13 @@
 package com.hevelian.exonite.connectors;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,6 +31,7 @@ import com.hevelian.exonite.core.Connector;
 import com.hevelian.exonite.core.Evaluator;
 import com.hevelian.exonite.interfaces.Action;
 import com.hevelian.exonite.interfaces.ConnectorImpl;
+import com.hevelian.exonite.utils.NameValuePair;
 
 public class URI implements ConnectorImpl {
 
@@ -36,6 +40,8 @@ public class URI implements ConnectorImpl {
 	private HashMap<String, Action> objects = null;
 	private Evaluator evaluator = null;
 	private Document doc = null;
+
+	private ArrayList<NameValuePair> urlParams	= new ArrayList<NameValuePair>();
 	
 	public URI() {
 	}
@@ -57,17 +63,64 @@ public class URI implements ConnectorImpl {
 		items = new ArrayList<CollectionItem>();
 		evaluator = new Evaluator(request, objects, connector);
 		String isType = "xml";
+		String useMethod = "GET";
+		String useContentType = "application/x-www-form-urlencoded";
+		String body = "";
+		String startFrom = null;
+		String extractNode = null;
+		String root = null;
 
 		String uri = evaluator.evaluate(_doc.getElementsByTagName("uri").item(0).getTextContent());
-		String root = evaluator.evaluate(_doc.getElementsByTagName("root").item(0).getTextContent());
 		
-		if(_doc.getElementsByTagName("isType")!=null) {
+		if(_doc.getElementsByTagName("root").getLength()>0) {
+			root = evaluator.evaluate(_doc.getElementsByTagName("root").item(0).getTextContent());			
+		}
+
+		if(_doc.getElementsByTagName("startFrom").getLength()>0) {
+			startFrom = evaluator.evaluate(_doc.getElementsByTagName("startFrom").item(0).getTextContent());			
+		}
+
+		if(_doc.getElementsByTagName("extractNodes").getLength()>0) {
+			extractNode = evaluator.evaluate(_doc.getElementsByTagName("extractNodes").item(0).getTextContent());			
+		}
+
+		if(_doc.getElementsByTagName("isType").getLength()>0) {
 			isType = evaluator.evaluate(_doc.getElementsByTagName("isType").item(0).getTextContent());			
+		}
+		
+		if(_doc.getElementsByTagName("useMethod").getLength()>0) {
+			useMethod = evaluator.evaluate(_doc.getElementsByTagName("useMethod").item(0).getTextContent());			
+		}
+		
+		if(_doc.getElementsByTagName("useContentType").getLength()>0) {
+			useContentType = evaluator.evaluate(_doc.getElementsByTagName("useContentType").item(0).getTextContent());			
+		}
+		
+		if(useMethod.equalsIgnoreCase("POST")) {
+			
+			try {
+				Element nodeProperties = (Element) _doc.getElementsByTagName("properties").item(0);
+				for(int i=0; i<nodeProperties.getChildNodes().getLength(); i++) {
+					Node node = nodeProperties.getChildNodes().item(i);
+					
+					 if(node.getNodeType()!=Element.ELEMENT_NODE) continue;
+					 
+					 urlParams.add(new NameValuePair(node.getNodeName(), node.getTextContent()));
+					 
+					 if(body.length()==0) {
+						 body = node.getAttributes().getNamedItem("name").getTextContent() + "=" + URLEncoder.encode(evaluator.evaluate(node.getTextContent()), "UTF-8");
+					 } else {
+						 body = body + "&" + node.getAttributes().getNamedItem("name").getTextContent() + "=" + URLEncoder.encode(evaluator.evaluate(node.getTextContent()), "UTF-8");
+					 }
+				}
+			} catch(Exception e) {
+				System.out.println(e.getMessage());
+			}
 		}
 		
 		try {
 			if(isType.equalsIgnoreCase("json")) {
-				java.net.URI _uri = new java.net.URI(uri);
+				java.net.URI _uri = new java.net.URI(uri + "?" + body);
 				URL url = _uri.toURL();
 				
 				String inputLine;
@@ -75,18 +128,44 @@ public class URI implements ConnectorImpl {
 				
 				URLConnection con = null;
 				BufferedReader in;
-				con = (URLConnection) url.openConnection();
-			    con.setDoInput(true);
-	            con.setUseCaches(false);
-			    
-			    con.connect();
-			    
-			    in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			    while ((inputLine = in.readLine()) != null) {
-			        jsonRaw += inputLine;
-			    }
-			    in.close();
+				
+				if(useMethod.equalsIgnoreCase("POST")) {
+					HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+					con = (URLConnection) url.openConnection();
+					httpCon.setDoInput(true);
+					httpCon.setUseCaches(false);
+					httpCon.setDoOutput(true);
+					httpCon.setRequestMethod("POST");
+					
+					byte[] postData = body.getBytes("UTF-8");
+					int postDataLength = postData.length;
+					
+					httpCon.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+					httpCon.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+					
+					DataOutputStream out = new DataOutputStream(httpCon.getOutputStream());
+					out.write(postData);
+					out.flush();
+					out.close();
+					
+				    in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				    while ((inputLine = in.readLine()) != null) {
+				        jsonRaw += inputLine;
+				    }
+				    in.close();
+				} else {
+					con = (URLConnection) url.openConnection();
+				    con.setDoInput(true);
+		            con.setUseCaches(false);
+				    con.connect();
 
+				    in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				    while ((inputLine = in.readLine()) != null) {
+				        jsonRaw += inputLine;
+				    }
+				    in.close();
+				}
+			    
 			    JSONObject jsonObject = new JSONObject(jsonRaw);
 			    fixJsonKey(jsonObject);
 
@@ -101,7 +180,9 @@ public class URI implements ConnectorImpl {
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 				doc = dBuilder.parse(uri);
 			}
-			processResult(doc, root);
+			
+			
+			processResult(doc, root, startFrom, extractNode);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -110,9 +191,27 @@ public class URI implements ConnectorImpl {
 		return items;
 	}
 
-	private void processResult(Document xml, String response_node) {
+	private void processResult(Document xml, String response_node, String start_node, String extract_node) {
 		try {
-			processNodeSet(xml.getElementsByTagName(response_node));
+			
+			// legacy function
+			if(response_node!=null) {
+				processNodeSet(xml.getElementsByTagName(response_node));
+			}
+			
+			if(start_node!=null&&extract_node!=null) {
+				Element e = (Element) xml.getElementsByTagName(start_node).item(0);
+				for(int i=0; i<e.getChildNodes().getLength(); i++) {
+					Node node = e.getChildNodes().item(i);
+					
+					if(node.getNodeType()!=Element.ELEMENT_NODE) continue;
+					if(node.getNodeName().equals(extract_node)) {
+						CollectionItem item = new CollectionItem();
+						ProcessChildren(item, node, node.getNodeName(), i);
+						items.add(item);
+					}
+				}
+			}
 		} catch(Exception e) {
 			return;
 		}

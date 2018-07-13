@@ -116,8 +116,6 @@ public class Twitter implements ConnectorImpl {
 				 } else {
 					 BaseURLParameters = BaseURLParameters + "&" + node.getNodeName() + "=" + URLEncoder.encode(evaluator.evaluate(node.getTextContent()), "UTF-8");
 				 }
-				 
-
 			}
 		} catch(Exception e) {
 		}

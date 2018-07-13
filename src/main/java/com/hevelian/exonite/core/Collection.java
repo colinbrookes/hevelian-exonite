@@ -31,6 +31,8 @@ public class Collection {
 	private SelectFilter filter = null;
 	private SetRotator rotator = null;
 	private Limit limiter = null;
+	private JoinCollection joinCollection = null;
+	private SetPreprocessor setPreprocessor = null;
 	
 	public Collection(String _name, HttpServletRequest request, HashMap<String, Action> objects) {
 		this.Name 		= _name;
@@ -60,33 +62,48 @@ public class Collection {
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			doc = dBuilder.parse(_xmlFile);
 			
-			/* check for a sub-select */
-			NodeList selectClauseNodes = doc.getElementsByTagName("select");
-			if(selectClauseNodes!=null && selectClauseNodes.getLength()>0) {
-				filter = new SelectFilter(this.request, this.objects, (Element) selectClauseNodes.item(0));
+			Node rootNode = doc.getElementsByTagName("collection").item(0);
+			
+			NodeList childNodes = rootNode.getChildNodes();
+			for(int i=0; i<childNodes.getLength(); i++) {
+				Node node = childNodes.item(i);
+				
+				if(node.getNodeType()!=Element.ELEMENT_NODE) continue;
+				
+				switch(node.getNodeName()) {
+				case "select":
+					filter = new SelectFilter(this.request, this.objects, (Element) node);
+					break;
+					
+				case "columns":
+					columns = (Element) node;
+					break;
+					
+				case "rotateSet":
+					rotator = new SetRotator(this.request, this.objects, (Element) node);
+					break;
+					
+				case "limit":
+					limiter = new Limit(this.request, this.objects, (Element) node);
+					break;
+					
+				case "connector":
+					connector = new Connector(node.getTextContent(), doc, this.request, objects);
+					break;
+					
+				case "join":
+					joinCollection = new JoinCollection(this.request, this.objects, (Element) node);
+					break;
+					
+				case "preProcessor":
+					setPreprocessor = new SetPreprocessor(this.request, this.objects, (Element) node);
+					break;
+					
+				default:
+					break;
+				}
 			}
-			
-			/* look for custom column definitions */
-			NodeList columnNodes = doc.getElementsByTagName("columns");
-			if(columnNodes!=null && columnNodes.getLength()>0) {
-				columns = (Element) columnNodes.item(0);
-			}
-			
-			/* look for a rotateSet command */
-			NodeList rotateSetNodes = doc.getElementsByTagName("rotateSet");
-			if(rotateSetNodes!=null && rotateSetNodes.getLength()>0) {
-				rotator = new SetRotator(this.request, this.objects, (Element) rotateSetNodes.item(0));
-			}
-			
-			/* look for a rotateSet command */
-			NodeList limitNodes = doc.getElementsByTagName("limit");
-			if(limitNodes!=null && limitNodes.getLength()>0) {
-				limiter = new Limit(this.request, this.objects, (Element) limitNodes.item(0));
-			}
-			
-			String connectorName = doc.getElementsByTagName("connector").item(0).getTextContent();
-			connector = new Connector(connectorName, doc, this.request, objects);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -95,12 +112,24 @@ public class Collection {
 	public String select() {
 		 ArrayList<CollectionItem> items = connector.select();
 		 
+		 if(joinCollection!=null) {
+			 try {
+				items = joinCollection.run(items);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		 }
+		 
 		 if(rotator!=null) {
 			 items = rotator.run(items);
 		 }
 		 
 		 if(limiter!=null) {
 			 items = limiter.run(items, filter);
+		 }
+		 
+		 if(setPreprocessor!=null) {
+			 items = setPreprocessor.run(items);
 		 }
 		 
 		 StringBuilder xml = new StringBuilder();

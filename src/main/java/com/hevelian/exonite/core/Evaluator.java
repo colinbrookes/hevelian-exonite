@@ -51,7 +51,7 @@ public class Evaluator {
 			engine.put("item", item);
 			engine.put("items",  items);
 			if(objects!=null) engine.put("objects", objects);
-			engine.eval(str);
+			engine.eval(evaluate(str, item));
 			
 		} catch (Exception e) {
 			e.printStackTrace();
