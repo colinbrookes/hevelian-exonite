@@ -1,19 +1,13 @@
 package com.hevelian.exonite.core;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.hevelian.exonite.interfaces.Action;
@@ -43,48 +37,26 @@ public class JoinCollection {
 		collection = new Collection(collectionName, request);
 	}
 
-	/**
-	 * We call the select method on the joined-to collection and parse the xml response into a set of items. 
-	 * (not very efficient actually, better to get the 'items' set instead).
-	 * 
-	 * @param items
-	 * @return
-	 * @throws ParserConfigurationException 
-	 * @throws IOException 
-	 * @throws SAXException 
-	 */
 	public ArrayList<CollectionItem> run(ArrayList<CollectionItem> items) throws ParserConfigurationException, SAXException, IOException {
 		
-		String toCollectionRaw = collection.select();
+		ArrayList<CollectionItem> toCollectionRaw = collection.selectRaw();
 
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		InputSource is = new InputSource(new StringReader(toCollectionRaw));
-		Document document = dBuilder.parse(is);
-		
-		NodeList nodes = document.getElementsByTagName("record");
-		
 		for(int i=0; i<items.size(); i++) {
 			CollectionItem item = items.get(i);
-			
-			for(int n=0; n<nodes.getLength(); n++) {
-				Element node = (Element) nodes.item(n);
-				
-				String to = node.getElementsByTagName(toKey).item(0).getTextContent();
-				
-				if(item.getValue(fromKey).equalsIgnoreCase(to)) {
-					// we have a key match, so we copy over the attributes
-					for(int c=0; c<node.getChildNodes().getLength(); c++) {
-						if(node.getChildNodes().item(c).getNodeType()!=Element.ELEMENT_NODE) continue;
-						
-						item.setValue(usePrefix + node.getChildNodes().item(c).getNodeName(), node.getChildNodes().item(c).getTextContent());
+
+			for(int n=0; n<toCollectionRaw.size(); n++) {
+				if(item.getValue(fromKey).equalsIgnoreCase(toCollectionRaw.get(n).getValue(toKey))) {
+					CollectionItem itemFrom = toCollectionRaw.get(n);
+					ArrayList<String> columns = itemFrom.getColumns();
+					for(int c=0; c<columns.size(); c++) {
+						item.setValue(usePrefix + columns.get(c), itemFrom.getValue(columns.get(c)));
 					}
 					break;
 				}
 			}
+			
 		}
 		
 		return items;
 	}
-
 }
