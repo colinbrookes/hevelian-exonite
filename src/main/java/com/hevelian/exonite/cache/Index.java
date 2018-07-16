@@ -60,10 +60,10 @@ public class Index {
 	private String wCON							= null;
 	private String wRHS							= null;
 
-	DocumentBuilderFactory dbFactory 			= null;
-	DocumentBuilder dBuilder 					= null;
-	ScriptEngineManager factory 				= new ScriptEngineManager();
-	ScriptEngine engine 						= factory.getEngineByName("JavaScript");
+	private DocumentBuilderFactory dbFactory 			= null;
+	private DocumentBuilder dBuilder 					= null;
+	private ScriptEngineManager factory 				= new ScriptEngineManager();
+	private ScriptEngine engine 						= factory.getEngineByName("JavaScript");
 
 	public Index(Element xml, HashMap<String, Action> map) {
 		doc 		= xml;
@@ -128,9 +128,7 @@ public class Index {
 			engine.put("item", new CollectionItem(record));
 			engine.eval(fWhere);
 			String result = (String) engine.get("result");
-			if(result.equalsIgnoreCase("true")) return true;
-			return false;
-			
+			return result.equalsIgnoreCase("true");
 		} catch(Exception e) {}
 		return false;
 	}
@@ -176,6 +174,9 @@ public class Index {
 				
 			case "notEqualTo":
 				if(lLHS != lRHS) return true;
+				break;
+				
+			default:
 				break;
 			}
 			
@@ -230,7 +231,6 @@ public class Index {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		return;
 	}
 	
 	/**
@@ -246,7 +246,7 @@ public class Index {
 		long lMax 			= -1;
 		boolean inserted 	= false;
 		
-		if(max!=null && max!="") {
+		if(max!=null && !max.equalsIgnoreCase("")) {
 			lMax = Long.parseLong(max);
 		}
 		
@@ -291,10 +291,8 @@ public class Index {
 				// check if the old record needs to be removed from the index
 				if(hasWhereClause==true && fWhere!=null) {
 					Element iRecord = loadIndexedRecord(line);
-					if(iRecord!=null) {
-						if(matchesWhereClause(iRecord)) {
-							out.println(line);
-						}
+					if(iRecord!=null && matchesWhereClause(iRecord)) {
+						out.println(line);
 					}
 				} else {
 					out.println(line);
