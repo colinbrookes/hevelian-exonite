@@ -1,7 +1,9 @@
 package com.hevelian.exonite.actions;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -10,19 +12,26 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.hevelian.exonite.core.CollectionItem;
+import com.hevelian.exonite.core.Configuration;
 import com.hevelian.exonite.core.Evaluator;
 import com.hevelian.exonite.interfaces.Action;
 
 public class Collection implements Action {
 
-	 ArrayList<CollectionItem> items 	= null;
-	 NodeList nodes						= null;
-	 HashMap<String, String> params 	= new HashMap<String, String>();
-	 int itemPtr 						= -1;
+	ArrayList<CollectionItem> items 	= null;
+	HashMap<String, String> params 		= new HashMap<String, String>();
+	int itemPtr 						= -1;
+	Configuration configuration			= new Configuration();
+
+	NodeList nodes						= null;
+	Document doc						= null;
+	DocumentBuilderFactory dbFactory 	= null;
+	DocumentBuilder dBuilder;
+	
+	com.hevelian.exonite.core.Collection collection = null;	 
 
 	public Collection() {
 		items = new ArrayList<CollectionItem>();
@@ -47,49 +56,44 @@ public class Collection implements Action {
 			}
 		}
 		
-		String _name 										= child.getAttribute("src");
-		com.hevelian.exonite.core.Collection collection 	= new com.hevelian.exonite.core.Collection(_name, null, map);
-		String records 										= collection.select();
-		Document doc										= null;
-		
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder;
-		try {
-			InputStream is = new ByteArrayInputStream(records.getBytes("UTF-8"));
-			dBuilder = dbFactory.newDocumentBuilder();
-			doc = dBuilder.parse(is);
-		} catch (Exception e) {
-			e.printStackTrace();
-			items = new ArrayList<CollectionItem>();
-			return;
+		String _name	= child.getAttribute("src");
+		collection 		= new com.hevelian.exonite.core.Collection(_name, null, map);
+
+		String storeToFile = child.getAttribute("storeToFile");
+		if(storeToFile!=null && !storeToFile.equalsIgnoreCase("")) {
+			try {
+				PrintWriter out = new PrintWriter(configuration.getProperty("folder_home") + storeToFile);
+				out.print(collection.select());
+				out.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
 		
-		// we got a set of records, so we create an array of CollectionItems from it
-		nodes = doc.getElementsByTagName("record");
-		
-        for(int i=0; i<nodes.getLength(); i++) {
-        	Element e = (Element) nodes.item(i);
-			CollectionItem item = new CollectionItem();
-			
-        	for(int c=0; c<e.getChildNodes().getLength(); c++) {
-        		Node node = e.getChildNodes().item(c);
-        		
-        		if(node.getNodeType()!=Element.ELEMENT_NODE) continue;
-        		
-        		item.setValue(node.getNodeName(), node.getTextContent());
-        	}
-        	
-			items.add(item);
-        }
-
+		items = collection.selectRaw();
 	}
 	
 	/**
 	 * returns the complete xmlised record currently being pointed to.
+	 * We convert the xml into a doc if this has not already been done yet - JIT.
+	 * 
 	 * @return
 	 */
 	@Override
 	public Element getRecord() {
+		
+		if(doc==null) {
+			String records = collection.select();
+			try {
+				InputStream is = new ByteArrayInputStream(records.getBytes("UTF-8"));
+				dBuilder = dbFactory.newDocumentBuilder();
+				doc = dBuilder.parse(is);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			nodes = doc.getElementsByTagName("record");
+		}
+		
 		if(nodes==null || nodes.getLength()==0) {
 			return null;
 		}
