@@ -33,6 +33,7 @@ public class Collection {
 	private Limit limiter = null;
 	private JoinCollection joinCollection = null;
 	private SetPreprocessor setPreprocessor = null;
+	private SetPreprocessor postProcessor = null;
 	
 	public Collection(String _name, HttpServletRequest request, HashMap<String, Action> objects) {
 		this.Name 		= _name;
@@ -97,6 +98,10 @@ public class Collection {
 					
 				case "preProcessor":
 					setPreprocessor = new SetPreprocessor(this.request, this.objects, (Element) node);
+					break;
+				
+				case "postProcessor":
+					postProcessor = new SetPreprocessor(this.request, this.objects, (Element) node);
 					break;
 					
 				default:
@@ -191,120 +196,41 @@ public class Collection {
 				 
 				 resultSet.add(resultItem);
 			 }
-			 return resultSet;
+			 items = resultSet;
+		 }
+		 
+		 if(postProcessor!=null) {
+			 items = postProcessor.run(items);
 		 }
 		 return items;
 	}
 	
 	public String select() {
-		 ArrayList<CollectionItem> items = connector.select();
-		 
-		 if(joinCollection!=null) {
-			 try {
-				items = joinCollection.run(items);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		 }
-		 
-		 if(rotator!=null) {
-			 items = rotator.run(items);
-		 }
-		 
-		 if(limiter!=null) {
-			 items = limiter.run(items, filter);
-		 }
-		 
-		 if(setPreprocessor!=null) {
-			 items = setPreprocessor.run(items);
-		 }
-		 
+		 ArrayList<CollectionItem> items = selectRaw();
+
 		 StringBuilder xml = new StringBuilder();
 		 xml.append("<records>\n");
 		 
 		 Iterator<CollectionItem> it = items.iterator();
-		 if(columns!=null) {
-			 evaluator = new Evaluator(request, objects);
-			 Boolean includeRaw = false;
-			 String rawPrefix = "data_";
+		 while(it.hasNext()) {
+			 CollectionItem item = it.next();
 			 
-			 if(columns.hasAttribute("includeRaw")) {
-				 rawPrefix = columns.getAttribute("rawPrefix");
-				 includeRaw = true;
-			 }
+			 if(filter!=null && !filter.matches(item)) continue;
 			 
-			 while(it.hasNext()) {
-				 CollectionItem item = it.next();
-				 
-				 if(limiter!=null || (filter!=null && !filter.matches(item))) continue;
-				 
-				 xml.append("	<record>\n");
-
-				 /* raw columns included, so we add these first */
-				 if(includeRaw==true) {
-					 ArrayList<String> columns = item.getColumns();
-					 ArrayList<String> values = item.getValues();
-					 
-					 for(int i=0; i<columns.size(); i++) {
-						 String column = columns.get(i);
-						 String value = values.get(i);
-						 if(value==null) value="";
-						 
-						 xml.append("		<" + rawPrefix + column + "><![CDATA[");
-						 
-						 xml.append(value);
-						 xml.append("]]></" + rawPrefix + column + ">\n");
-					 }
-				 }
-				 
-				 /* now do the mapped columns */
-				 for(int i=0; i<columns.getChildNodes().getLength(); i++) {
-					 Node node = columns.getChildNodes().item(i);
-					 String isScript = null;
-					 String value = "";
-					 
-					 if(node.getNodeType()!=Element.ELEMENT_NODE) continue;
-					 
-					 if(node.hasAttributes() && node.getAttributes().getNamedItem("type")!=null) {
-						 isScript = node.getAttributes().getNamedItem("type").getNodeValue();
-						 
-					 }
-					 
-					 String column = node.getNodeName();
-					 
-					 if(isScript==null || !isScript.equalsIgnoreCase("script")) {
-						 value = evaluator.evaluate(node.getTextContent(), item);
-					 } else {
-						 value = evaluator.evaluateScript(node.getTextContent(), item, items);
-					 }
-					 xml.append("		<" + column + "><![CDATA[");
-					 xml.append(value);
-					 xml.append("]]></" + column + ">\n");
-				 }
-				 xml.append("	</record>\n");
-			 }
-		 } else {
-			 while(it.hasNext()) {
-				 CollectionItem item = it.next();
-				 
-				 if(filter!=null && !filter.matches(item)) continue;
-				 
-				 ArrayList<String> columns = item.getColumns();
-				 ArrayList<String> values = item.getValues();
-				 
-				 xml.append("	<record>\n");
-				 for(int i=0; i<columns.size(); i++) {
-					 String column = columns.get(i);
-					 String value = values.get(i);
-					 if(value==null) value="";
-					 
-					 xml.append("		<" + column + "><![CDATA[");
-					 xml.append(value);
-					 xml.append("]]></" + column + ">\n");
-				 }
-				 xml.append("	</record>\n");
-			 }
+			 ArrayList<String> columns = item.getColumns();
+			 ArrayList<String> values = item.getValues();
 			 
+			 xml.append("	<record>\n");
+			 for(int i=0; i<columns.size(); i++) {
+				 String column = columns.get(i);
+				 String value = values.get(i);
+				 if(value==null) value="";
+				 
+				 xml.append("		<" + column + "><![CDATA[");
+				 xml.append(value);
+				 xml.append("]]></" + column + ">\n");
+			 }
+			 xml.append("	</record>\n");
 		 }
 		 
 		 xml.append("</records>");
